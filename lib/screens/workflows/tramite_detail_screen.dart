@@ -119,6 +119,22 @@ class _TramiteDetailScreenState extends State<TramiteDetailScreen> {
     }
   }
 
+  Future<void> _submitDecision(String decision) async {
+    setState(() => _isSubmitting = true);
+    try {
+      await WorkflowService.responderPaso(widget.tramite.id!, _pasoActual!.id, {}, decision);
+      if (mounted) {
+         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Decisión enviada.')));
+         context.pop(); // Go back to list
+      }
+    } catch (e) {
+      if (mounted) {
+         setState(() => _isSubmitting = false);
+         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString()), backgroundColor: AppColors.error));
+      }
+    }
+  }
+
   // --- Widgets for Dynamic Form ---
   Widget _buildDynamicField(String key, dynamic spec, String label) {
     final type = spec['type'] ?? 'string';
@@ -235,7 +251,28 @@ class _TramiteDetailScreenState extends State<TramiteDetailScreen> {
                if (needsClientResponse)
                  Padding(
                    padding: const EdgeInsets.only(top: 32.0),
-                   child: Column(
+                   child: _pasoActual?.tipo == 'DECISION' ? Column(
+                     crossAxisAlignment: CrossAxisAlignment.stretch,
+                     children: [
+                        const Text('Decisión Requerida', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.secondary)),
+                        const SizedBox(height: 8),
+                        const Text('Por favor seleccione una de las siguientes opciones para continuar.', style: TextStyle(color: AppColors.textSecondary)),
+                        const SizedBox(height: 24),
+                        if (_pasoActual?.siguientes != null)
+                          ..._pasoActual!.siguientes!.keys.map((opcion) => Padding(
+                            padding: const EdgeInsets.only(bottom: 12.0),
+                            child: _isSubmitting
+                              ? const Center(child: CircularProgressIndicator())
+                              : ElevatedButton(
+                                  onPressed: () => _submitDecision(opcion),
+                                  style: ElevatedButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(vertical: 16),
+                                  ),
+                                  child: Text(opcion, style: const TextStyle(fontSize: 16)),
+                                ),
+                          )).toList(),
+                     ],
+                   ) : Column(
                      crossAxisAlignment: CrossAxisAlignment.stretch,
                      children: [
                         const Text('Requerimiento del Cliente', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.secondary)),
