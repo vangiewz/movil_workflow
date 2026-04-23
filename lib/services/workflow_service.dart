@@ -69,11 +69,14 @@ class WorkflowService {
   }
 
   // Submit step response
-  static Future<void> responderPaso(String tramiteId, String pasoId, Map<String, dynamic> respuesta) async {
+  static Future<void> responderPaso(String tramiteId, String pasoId, Map<String, dynamic> respuesta, [String? decisionElegida]) async {
     final body = {
       "pasoId": pasoId,
       "respuesta": respuesta
     };
+    if (decisionElegida != null) {
+      body["decisionElegida"] = decisionElegida;
+    }
     final response = await ApiService.post('/tramites/$tramiteId/responder', body);
     if (response.statusCode != 200 && response.statusCode != 201) {
       throw Exception('Error al enviar respuesta: ${response.body}');

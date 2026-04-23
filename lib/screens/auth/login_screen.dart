@@ -71,7 +71,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         color: AppColors.accentGlow,
                         blurRadius: 40,
                         spreadRadius: -10,
-                      )
+                      ),
                     ],
                   ),
                   child: const Icon(
@@ -84,10 +84,10 @@ class _LoginScreenState extends State<LoginScreen> {
 
                 // Title
                 Text(
-                  'Workflow App',
+                  'Workflows Inteligentes',
                   style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                        color: AppColors.textPrimary,
-                      ),
+                    color: AppColors.textPrimary,
+                  ),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 8),
@@ -114,7 +114,10 @@ class _LoginScreenState extends State<LoginScreen> {
                         decoration: const InputDecoration(
                           hintText: 'ejemplo@correo.com',
                           labelText: 'Correo Electrónico',
-                          prefixIcon: Icon(Icons.email_outlined, color: AppColors.textSecondary),
+                          prefixIcon: Icon(
+                            Icons.email_outlined,
+                            color: AppColors.textSecondary,
+                          ),
                         ),
                         keyboardType: TextInputType.emailAddress,
                       ),
@@ -128,10 +131,15 @@ class _LoginScreenState extends State<LoginScreen> {
                         decoration: InputDecoration(
                           hintText: 'Tu contraseña',
                           labelText: 'Contraseña',
-                          prefixIcon: const Icon(Icons.lock_outline, color: AppColors.textSecondary),
+                          prefixIcon: const Icon(
+                            Icons.lock_outline,
+                            color: AppColors.textSecondary,
+                          ),
                           suffixIcon: IconButton(
                             icon: Icon(
-                              _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                              _obscurePassword
+                                  ? Icons.visibility_off
+                                  : Icons.visibility,
                               color: AppColors.textSecondary,
                             ),
                             onPressed: () {
@@ -177,13 +185,16 @@ class _LoginScreenState extends State<LoginScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Text('¿No tienes cuenta?', style: TextStyle(color: AppColors.textSecondary)),
+                    const Text(
+                      '¿No tienes cuenta?',
+                      style: TextStyle(color: AppColors.textSecondary),
+                    ),
                     TextButton(
                       onPressed: () => context.push('/register'),
                       child: const Text('Regístrate aquí'),
                     ),
                   ],
-                )
+                ),
               ],
             ),
           ),

@@ -115,6 +115,14 @@ class DefaultFirebaseOptions {
       'FIREBASE_WEB_AUTH_DOMAIN',
       'FIREBASE_WEB_STORAGE_BUCKET',
     ],
+    requiredValues: const [
+      _webApiKey,
+      _webAppId,
+      _webMessagingSenderId,
+      _webProjectId,
+      _webAuthDomain,
+      _webStorageBucket,
+    ],
   );
 
   static FirebaseOptions get android => _required(
@@ -132,6 +140,13 @@ class DefaultFirebaseOptions {
       'FIREBASE_ANDROID_MESSAGING_SENDER_ID',
       'FIREBASE_ANDROID_PROJECT_ID',
       'FIREBASE_ANDROID_STORAGE_BUCKET',
+    ],
+    requiredValues: const [
+      _androidApiKey,
+      _androidAppId,
+      _androidMessagingSenderId,
+      _androidProjectId,
+      _androidStorageBucket,
     ],
   );
 
@@ -153,16 +168,23 @@ class DefaultFirebaseOptions {
       'FIREBASE_IOS_STORAGE_BUCKET',
       'FIREBASE_IOS_BUNDLE_ID',
     ],
+    requiredValues: const [
+      _iosApiKey,
+      _iosAppId,
+      _iosMessagingSenderId,
+      _iosProjectId,
+      _iosStorageBucket,
+      _iosBundleId,
+    ],
   );
 
   static FirebaseOptions _required(
     FirebaseOptions options, {
     required String platform,
     required List<String> requiredKeys,
+    required List<String> requiredValues,
   }) {
-    final hasMissing = requiredKeys.any(
-      (key) => const String.fromEnvironment(key).isEmpty,
-    );
+    final hasMissing = requiredValues.any((value) => value.isEmpty);
 
     if (hasMissing) {
       throw UnsupportedError(
