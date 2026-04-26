@@ -6,7 +6,10 @@ import 'push_notification_service.dart';
 class AuthService {
   // Login global para cualquier empleado o cliente
   static Future<Map<String, dynamic>> login(String email, String password) async {
-    // Obtenemos el FCM token si está configurado
+    // 1. Pedir permisos de notificaciones ANTES de obtener el token
+    await PushNotificationService.requestPermissions();
+
+    // 2. Obtener el FCM token real (null si no se pudo)
     String? fcmToken = await PushNotificationService.getToken();
 
     final response = await ApiService.post('/auth/mobile/login', {

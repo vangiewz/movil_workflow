@@ -52,11 +52,16 @@ class _ActiveTramitesScreenState extends State<ActiveTramitesScreen> {
                   itemBuilder: (context, index) {
                     final t = _tramites[index];
                     final isDone = t.estadoGlobal == 'FINALIZADO';
-                    final colorStatus = isDone ? Colors.green : AppColors.primary;
+                    final isEsperandoPago = t.estadoGlobal == 'ESPERANDO_PAGO';
+                    final colorStatus = isDone ? Colors.green : (isEsperandoPago ? Colors.orange : AppColors.primary);
 
                     return GestureDetector(
                       onTap: () {
-                         context.push('/tramites/detail', extra: t);
+                         if (isEsperandoPago) {
+                           context.push('/payment', extra: t);
+                         } else {
+                           context.push('/tramites/detail', extra: t);
+                         }
                       },
                       child: Container(
                         margin: const EdgeInsets.only(bottom: 16),
@@ -80,12 +85,20 @@ class _ActiveTramitesScreenState extends State<ActiveTramitesScreen> {
                             const SizedBox(height: 12),
                             Text(t.nombrePlantilla, style: const TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.bold)),
                             const SizedBox(height: 8),
-                            if (!isDone) 
+                            if (!isDone && !isEsperandoPago) 
                                Row(
                                  children: [
                                     const Icon(Icons.pending_actions, size: 16, color: AppColors.secondary),
                                     const SizedBox(width: 8),
                                     Expanded(child: Text('Trámite en curso. Toca para ver detalles.', style: const TextStyle(color: AppColors.textSecondary))),
+                                 ],
+                               ),
+                            if (isEsperandoPago)
+                               Row(
+                                 children: [
+                                    const Icon(Icons.payment, size: 16, color: Colors.orange),
+                                    const SizedBox(width: 8),
+                                    Expanded(child: Text('Pendiente de pago. Toca para abrir pasarela.', style: const TextStyle(color: Colors.orange))),
                                  ],
                                ),
                             if (isDone)

@@ -2,20 +2,29 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'config/app_theme.dart';
 import 'routes/app_routes.dart';
+import 'services/push_notification_service.dart';
 
 /// Punto de entrada de la aplicación
 /// Patrón: Single Root App - Configuración centralizada
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
+  await dotenv.load(fileName: ".env");
+
   try {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
+    debugPrint("Firebase inicializado correctamente");
+    
+    // Inicializar manejadores de notificaciones Push (background/foreground)
+    await PushNotificationService.init();
+    
   } catch (e) {
-    debugPrint("Firebase API no inicializado o faltan google-services.json: $e");
+    debugPrint("Error inicializando Firebase: $e");
   }
 
   runApp(const MyApp());

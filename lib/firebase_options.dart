@@ -1,71 +1,10 @@
-// Firebase options loaded from compile-time defines.
-// Keep real values out of version control by using --dart-define or
-// --dart-define-from-file=.env
 import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;
 import 'package:flutter/foundation.dart'
     show defaultTargetPlatform, kIsWeb, TargetPlatform;
 
-/// Default [FirebaseOptions] for use with your Firebase apps.
-///
-/// Example:
-/// ```dart
-/// import 'firebase_options.dart';
-/// // ...
-/// await Firebase.initializeApp(
-///   options: DefaultFirebaseOptions.currentPlatform,
-/// );
-/// ```
+/// Firebase options con valores hardcodeados del proyecto.
+/// Estos valores son públicos por diseño (Google lo documenta así).
 class DefaultFirebaseOptions {
-  static const String _webApiKey = String.fromEnvironment(
-    'FIREBASE_WEB_API_KEY',
-  );
-  static const String _webAppId = String.fromEnvironment('FIREBASE_WEB_APP_ID');
-  static const String _webMessagingSenderId = String.fromEnvironment(
-    'FIREBASE_WEB_MESSAGING_SENDER_ID',
-  );
-  static const String _webProjectId = String.fromEnvironment(
-    'FIREBASE_WEB_PROJECT_ID',
-  );
-  static const String _webAuthDomain = String.fromEnvironment(
-    'FIREBASE_WEB_AUTH_DOMAIN',
-  );
-  static const String _webStorageBucket = String.fromEnvironment(
-    'FIREBASE_WEB_STORAGE_BUCKET',
-  );
-
-  static const String _androidApiKey = String.fromEnvironment(
-    'FIREBASE_ANDROID_API_KEY',
-  );
-  static const String _androidAppId = String.fromEnvironment(
-    'FIREBASE_ANDROID_APP_ID',
-  );
-  static const String _androidMessagingSenderId = String.fromEnvironment(
-    'FIREBASE_ANDROID_MESSAGING_SENDER_ID',
-  );
-  static const String _androidProjectId = String.fromEnvironment(
-    'FIREBASE_ANDROID_PROJECT_ID',
-  );
-  static const String _androidStorageBucket = String.fromEnvironment(
-    'FIREBASE_ANDROID_STORAGE_BUCKET',
-  );
-
-  static const String _iosApiKey = String.fromEnvironment(
-    'FIREBASE_IOS_API_KEY',
-  );
-  static const String _iosAppId = String.fromEnvironment('FIREBASE_IOS_APP_ID');
-  static const String _iosMessagingSenderId = String.fromEnvironment(
-    'FIREBASE_IOS_MESSAGING_SENDER_ID',
-  );
-  static const String _iosProjectId = String.fromEnvironment(
-    'FIREBASE_IOS_PROJECT_ID',
-  );
-  static const String _iosStorageBucket = String.fromEnvironment(
-    'FIREBASE_IOS_STORAGE_BUCKET',
-  );
-  static const String _iosBundleId = String.fromEnvironment(
-    'FIREBASE_IOS_BUNDLE_ID',
-  );
-
   static FirebaseOptions get currentPlatform {
     if (kIsWeb) {
       return web;
@@ -75,21 +14,6 @@ class DefaultFirebaseOptions {
         return android;
       case TargetPlatform.iOS:
         return ios;
-      case TargetPlatform.macOS:
-        throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for macos - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
-        );
-      case TargetPlatform.windows:
-        throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for windows - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
-        );
-      case TargetPlatform.linux:
-        throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for linux - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
-        );
       default:
         throw UnsupportedError(
           'DefaultFirebaseOptions are not supported for this platform.',
@@ -97,102 +21,29 @@ class DefaultFirebaseOptions {
     }
   }
 
-  static FirebaseOptions get web => _required(
-    FirebaseOptions(
-      apiKey: _webApiKey,
-      appId: _webAppId,
-      messagingSenderId: _webMessagingSenderId,
-      projectId: _webProjectId,
-      authDomain: _webAuthDomain,
-      storageBucket: _webStorageBucket,
-    ),
-    platform: 'web',
-    requiredKeys: const [
-      'FIREBASE_WEB_API_KEY',
-      'FIREBASE_WEB_APP_ID',
-      'FIREBASE_WEB_MESSAGING_SENDER_ID',
-      'FIREBASE_WEB_PROJECT_ID',
-      'FIREBASE_WEB_AUTH_DOMAIN',
-      'FIREBASE_WEB_STORAGE_BUCKET',
-    ],
-    requiredValues: const [
-      _webApiKey,
-      _webAppId,
-      _webMessagingSenderId,
-      _webProjectId,
-      _webAuthDomain,
-      _webStorageBucket,
-    ],
+  static const FirebaseOptions web = FirebaseOptions(
+    apiKey: 'AIzaSyC_1ZheE4ZtZJZS_qJXdt2Lp0m-gJ0sVJM',
+    appId: '1:722933984234:web:21cf4c97d418c88a68a093',
+    messagingSenderId: '722933984234',
+    projectId: 'workflows-fc6cd',
+    authDomain: 'workflows-fc6cd.firebaseapp.com',
+    storageBucket: 'workflows-fc6cd.firebasestorage.app',
   );
 
-  static FirebaseOptions get android => _required(
-    FirebaseOptions(
-      apiKey: _androidApiKey,
-      appId: _androidAppId,
-      messagingSenderId: _androidMessagingSenderId,
-      projectId: _androidProjectId,
-      storageBucket: _androidStorageBucket,
-    ),
-    platform: 'android',
-    requiredKeys: const [
-      'FIREBASE_ANDROID_API_KEY',
-      'FIREBASE_ANDROID_APP_ID',
-      'FIREBASE_ANDROID_MESSAGING_SENDER_ID',
-      'FIREBASE_ANDROID_PROJECT_ID',
-      'FIREBASE_ANDROID_STORAGE_BUCKET',
-    ],
-    requiredValues: const [
-      _androidApiKey,
-      _androidAppId,
-      _androidMessagingSenderId,
-      _androidProjectId,
-      _androidStorageBucket,
-    ],
+  static const FirebaseOptions android = FirebaseOptions(
+    apiKey: 'AIzaSyABrBcCItjkUNiWEVS_ZKrXMXVyu1qhPx8',
+    appId: '1:722933984234:android:59bec944cfe7839768a093',
+    messagingSenderId: '722933984234',
+    projectId: 'workflows-fc6cd',
+    storageBucket: 'workflows-fc6cd.firebasestorage.app',
   );
 
-  static FirebaseOptions get ios => _required(
-    FirebaseOptions(
-      apiKey: _iosApiKey,
-      appId: _iosAppId,
-      messagingSenderId: _iosMessagingSenderId,
-      projectId: _iosProjectId,
-      storageBucket: _iosStorageBucket,
-      iosBundleId: _iosBundleId,
-    ),
-    platform: 'ios',
-    requiredKeys: const [
-      'FIREBASE_IOS_API_KEY',
-      'FIREBASE_IOS_APP_ID',
-      'FIREBASE_IOS_MESSAGING_SENDER_ID',
-      'FIREBASE_IOS_PROJECT_ID',
-      'FIREBASE_IOS_STORAGE_BUCKET',
-      'FIREBASE_IOS_BUNDLE_ID',
-    ],
-    requiredValues: const [
-      _iosApiKey,
-      _iosAppId,
-      _iosMessagingSenderId,
-      _iosProjectId,
-      _iosStorageBucket,
-      _iosBundleId,
-    ],
+  static const FirebaseOptions ios = FirebaseOptions(
+    apiKey: 'AIzaSyBZgJYpONFJ8toHziU9Cd95IUdIrTxWkSk',
+    appId: '1:722933984234:ios:041d13051aa045fb68a093',
+    messagingSenderId: '722933984234',
+    projectId: 'workflows-fc6cd',
+    storageBucket: 'workflows-fc6cd.firebasestorage.app',
+    iosBundleId: 'com.example.movilWorkflow',
   );
-
-  static FirebaseOptions _required(
-    FirebaseOptions options, {
-    required String platform,
-    required List<String> requiredKeys,
-    required List<String> requiredValues,
-  }) {
-    final hasMissing = requiredValues.any((value) => value.isEmpty);
-
-    if (hasMissing) {
-      throw UnsupportedError(
-        'Missing Firebase configuration for $platform. '
-        'Provide required --dart-define values: ${requiredKeys.join(', ')}',
-      );
-    }
-
-    return options;
-  }
 }
