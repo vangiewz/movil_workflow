@@ -80,8 +80,8 @@ class AppRoutes {
         path: payment,
         name: 'payment',
         builder: (context, state) {
-          final wf = state.extra as PlantillaWorkflow;
-          return PaymentScreen(workflow: wf);
+          final tramite = state.extra as Tramite;
+          return PaymentScreen(tramite: tramite);
         },
       ),
       GoRoute(

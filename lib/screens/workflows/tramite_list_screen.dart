@@ -33,14 +33,19 @@ class _TramiteListScreenState extends State<TramiteListScreen> {
     } catch (e) {
       if (mounted) {
         setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString()), backgroundColor: AppColors.error));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.toString()),
+            backgroundColor: AppColors.error,
+          ),
+        );
       }
     }
   }
 
   void _onWorkflowSelected(PlantillaWorkflow workflow) {
-    // Navigate to payment or detail page
-    context.push('/payment', extra: workflow);
+    // Navigate to form page first
+    context.push('/form', extra: workflow);
   }
 
   @override
@@ -49,9 +54,9 @@ class _TramiteListScreenState extends State<TramiteListScreen> {
       appBar: AppBar(title: const Text('Operación de Trámites')),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : _plantillas.isEmpty 
-            ? const Center(child: Text('No hay trámites disponibles.'))
-            : ListView.builder(
+          : _plantillas.isEmpty
+          ? const Center(child: Text('No hay trámites disponibles.'))
+          : ListView.builder(
               padding: const EdgeInsets.all(24.0),
               itemCount: _plantillas.length,
               itemBuilder: (context, index) {
@@ -67,7 +72,14 @@ class _TramiteListScreenState extends State<TramiteListScreen> {
                       color: AppColors.surfaceVariant,
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(color: AppColors.border),
-                      boxShadow: requierePago ? const [BoxShadow(color: AppColors.accentGlow, blurRadius: 4)] : [],
+                      boxShadow: requierePago
+                          ? const [
+                              BoxShadow(
+                                color: AppColors.accentGlow,
+                                blurRadius: 4,
+                              ),
+                            ]
+                          : [],
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -75,16 +87,44 @@ class _TramiteListScreenState extends State<TramiteListScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(wf.categoria, style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 12)),
-                            requierePago 
-                              ? Text('\$${wf.costoBase} USDT', style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold))
-                              : const Text('Gratuito', style: TextStyle(color: Colors.grey)),
+                            Text(
+                              wf.categoria,
+                              style: const TextStyle(
+                                color: AppColors.primary,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12,
+                              ),
+                            ),
+                            requierePago
+                                ? Text(
+                                    '\$${wf.costoBase} USD',
+                                    style: const TextStyle(
+                                      color: Colors.green,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  )
+                                : const Text(
+                                    'Gratuito',
+                                    style: TextStyle(color: Colors.grey),
+                                  ),
                           ],
                         ),
                         const SizedBox(height: 8),
-                        Text(wf.nombre, style: const TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.bold)),
+                        Text(
+                          wf.nombre,
+                          style: const TextStyle(
+                            color: AppColors.textPrimary,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                         const SizedBox(height: 6),
-                        Text(wf.descripcion, style: const TextStyle(color: AppColors.textSecondary)),
+                        Text(
+                          wf.descripcion,
+                          style: const TextStyle(
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
                       ],
                     ),
                   ),

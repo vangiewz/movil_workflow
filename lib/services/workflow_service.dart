@@ -29,7 +29,7 @@ class WorkflowService {
     }
   }
 
-  static Future<Tramite> createTramite(String plantillaId, Map<String, dynamic> datosFormulario) async {
+  static Future<Tramite> createTramite(String plantillaId, Map<String, dynamic> datosFormulario, {Map<String, String>? files}) async {
     final prefs = await SharedPreferences.getInstance();
     final clienteId = prefs.getString('userId') ?? 'DESCONOCIDO';
 
@@ -39,7 +39,10 @@ class WorkflowService {
       'datosCliente': datosFormulario,
     };
 
-    final response = await ApiService.post('/tramites', requestBody);
+    final response = (files != null && files.isNotEmpty)
+        ? await ApiService.postMultipart('/tramites', requestBody, files)
+        : await ApiService.post('/tramites', requestBody);
+
     if (response.statusCode == 201 || response.statusCode == 200) {
       return Tramite.fromJson(jsonDecode(response.body));
     } else {
@@ -69,7 +72,7 @@ class WorkflowService {
   }
 
   // Submit step response
-  static Future<void> responderPaso(String tramiteId, String pasoId, Map<String, dynamic> respuesta, [String? decisionElegida]) async {
+  static Future<void> responderPaso(String tramiteId, String pasoId, Map<String, dynamic> respuesta, {String? decisionElegida, Map<String, String>? files}) async {
     final body = {
       "pasoId": pasoId,
       "respuesta": respuesta
@@ -77,9 +80,24 @@ class WorkflowService {
     if (decisionElegida != null) {
       body["decisionElegida"] = decisionElegida;
     }
-    final response = await ApiService.post('/tramites/$tramiteId/responder', body);
+    
+    // Si hay archivos, usamos postMultipart
+    final response = (files != null && files.isNotEmpty)
+        ? await ApiService.postMultipart('/tramites/$tramiteId/responder', body, files)
+        : await ApiService.post('/tramites/$tramiteId/responder', body);
+
     if (response.statusCode != 200 && response.statusCode != 201) {
       throw Exception('Error al enviar respuesta: ${response.body}');
+    }
+  }
+
+  /// Obtiene el resumen generado por IA de un trámite finalizado.
+  static Future<Map<String, dynamic>> getResumenTramite(String tramiteId) async {
+    final response = await ApiService.get('/tramites/$tramiteId/resumen');
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body) as Map<String, dynamic>;
+    } else {
+      throw Exception('Error al obtener resumen del trámite');
     }
   }
 }

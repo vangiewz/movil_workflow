@@ -4,6 +4,8 @@ class Tramite {
   final String nombrePlantilla;
   final String estadoGlobal;
   final String? pasoActualId;
+  final String? paymentId;
+  final String? invoiceUrl;
 
   Tramite({
     required this.id,
@@ -11,6 +13,8 @@ class Tramite {
     required this.nombrePlantilla,
     required this.estadoGlobal,
     this.pasoActualId,
+    this.paymentId,
+    this.invoiceUrl,
   });
 
   factory Tramite.fromJson(Map<String, dynamic> json) {
@@ -20,6 +24,8 @@ class Tramite {
       nombrePlantilla: json['nombrePlantilla'] ?? '',
       estadoGlobal: json['estadoGlobal'] ?? 'PENDIENTE',
       pasoActualId: json['pasoActualId'],
+      paymentId: json['paymentId'],
+      invoiceUrl: json['invoiceUrl'],
     );
   }
 }

@@ -4,6 +4,7 @@ import '../../models/plantilla_workflow.dart';
 import '../../services/workflow_service.dart';
 import '../../services/draft_service.dart';
 import 'package:go_router/go_router.dart';
+import 'package:file_picker/file_picker.dart';
 
 class FormScreen extends StatefulWidget {
   final PlantillaWorkflow workflow;
@@ -15,6 +16,7 @@ class FormScreen extends StatefulWidget {
 
 class _FormScreenState extends State<FormScreen> {
   final Map<String, TextEditingController> _controllers = {};
+  final Map<String, String> _selectedFiles = {};
   bool _isLoading = false;
   Map<String, dynamic> _schemaProperties = {};
 
@@ -52,7 +54,15 @@ class _FormScreenState extends State<FormScreen> {
     final List<dynamic> authRequired = formJson != null && formJson['required'] != null ? formJson['required'] : [];
 
     for (final key in authRequired) {
-      if (_controllers[key] != null && _controllers[key]!.text.trim().isEmpty) {
+      final rawType = _schemaProperties[key]?['type']?.toString().toLowerCase();
+      final rawFormat = _schemaProperties[key]?['format']?.toString().toLowerCase();
+      final isFile = rawType == 'file' || rawFormat == 'file' || rawFormat == 'binary' || rawType == 'archivo';
+      if (isFile) {
+        if (!_selectedFiles.containsKey(key)) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Por favor sube el archivo: $key'), backgroundColor: AppColors.error));
+          return;
+        }
+      } else if (_controllers[key] != null && _controllers[key]!.text.trim().isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Por favor llena el campo: $key'), backgroundColor: AppColors.error));
         return; // Detiene el flujo
       }
@@ -66,10 +76,16 @@ class _FormScreenState extends State<FormScreen> {
       // Intentar forzar casteos estrictos si el schema lo pedía
       final propSpec = _schemaProperties[key];
       if (propSpec != null) {
-        if (propSpec['type'] == 'number' || propSpec['type'] == 'integer') {
+        final rawType = propSpec['type']?.toString().toLowerCase();
+        final rawFormat = propSpec['format']?.toString().toLowerCase();
+        final isFile = rawType == 'file' || rawFormat == 'file' || rawFormat == 'binary' || rawType == 'archivo';
+
+        if (rawType == 'number' || rawType == 'integer') {
           formData[key] = num.tryParse(controller.text) ?? 0;
-        } else if (propSpec['type'] == 'boolean') {
+        } else if (rawType == 'boolean') {
           formData[key] = (controller.text == 'true');
+        } else if (isFile) {
+          // El archivo va en files, no en formData json
         } else {
           formData[key] = controller.text;
         }
@@ -79,12 +95,17 @@ class _FormScreenState extends State<FormScreen> {
     });
 
     try {
-      await WorkflowService.createTramite(widget.workflow.id, formData);
+      final tramite = await WorkflowService.createTramite(widget.workflow.id, formData, files: _selectedFiles);
       await DraftService.removePaidDraft(widget.workflow.id);
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('¡Trámite creado exitosamente!')));
-        context.go('/home'); // Regresar al dashboard
+        if (tramite.estadoGlobal == 'ESPERANDO_PAGO') {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Trámite creado. Redirigiendo a pago...')));
+          context.pushReplacement('/payment', extra: tramite);
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('¡Trámite creado exitosamente!')));
+          context.go('/home'); // Regresar al dashboard
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -129,8 +150,8 @@ class _FormScreenState extends State<FormScreen> {
   }
 
   Widget _buildDynamicField(String key, dynamic spec, String label) {
-    final type = spec['type'] ?? 'string';
-    final format = spec['format'];
+    final type = (spec['type']?.toString() ?? 'string').toLowerCase();
+    final format = spec['format']?.toString().toLowerCase();
 
     if (type == 'boolean') {
       return Padding(
@@ -158,7 +179,8 @@ class _FormScreenState extends State<FormScreen> {
           }
         ),
       );
-    } else if (type == 'string' && format == 'date') {
+    } else if ((type == 'string' && (format == 'date' || format == 'date-time')) || type == 'date' || type == 'datetime' || type == 'date-time') {
+      final isDateTime = format == 'date-time' || type == 'datetime' || type == 'date-time';
       return Padding(
         padding: const EdgeInsets.only(bottom: 16.0),
         child: TextField(
@@ -166,7 +188,7 @@ class _FormScreenState extends State<FormScreen> {
           readOnly: true,
           decoration: InputDecoration(
             labelText: label.toUpperCase(),
-            hintText: 'Selecciona una fecha',
+            hintText: isDateTime ? 'Selecciona fecha y hora' : 'Selecciona una fecha',
             prefixIcon: const Icon(Icons.calendar_month, color: AppColors.textSecondary),
           ),
           onTap: () async {
@@ -190,10 +212,71 @@ class _FormScreenState extends State<FormScreen> {
               },
             );
             if (date != null) {
-              _controllers[key]!.text = "${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}";
+              if (isDateTime) {
+                if (!context.mounted) return;
+                final time = await showTimePicker(
+                  context: context,
+                  initialTime: TimeOfDay.now(),
+                );
+                if (time != null) {
+                  final dt = DateTime(date.year, date.month, date.day, time.hour, time.minute);
+                  _controllers[key]!.text = dt.toIso8601String();
+                }
+              } else {
+                _controllers[key]!.text = "${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}";
+              }
             }
           },
         ),
+      );
+    } else if (type == 'file' || format == 'file' || format == 'binary' || type == 'archivo') {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 16.0),
+        child: StatefulBuilder(
+          builder: (context, setStateFile) {
+            final hasFile = _selectedFiles.containsKey(key);
+            final fileName = hasFile ? _selectedFiles[key]!.split('/').last : 'Ningún archivo seleccionado';
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label.toUpperCase(), style: const TextStyle(fontSize: 12, color: AppColors.textSecondary, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 8),
+                InkWell(
+                  onTap: () async {
+                    FilePickerResult? result = await FilePicker.pickFiles();
+                    if (result != null && result.files.single.path != null) {
+                      setStateFile(() {
+                        _selectedFiles[key] = result.files.single.path!;
+                      });
+                    }
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: hasFile ? AppColors.primary : AppColors.border),
+                      borderRadius: BorderRadius.circular(12),
+                      color: AppColors.surfaceVariant
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(hasFile ? Icons.file_present : Icons.upload_file, color: hasFile ? AppColors.primaryLight : AppColors.textSecondary),
+                        const SizedBox(width: 12),
+                        Expanded(child: Text(fileName, style: TextStyle(color: hasFile ? AppColors.textPrimary : AppColors.textSecondary, overflow: TextOverflow.ellipsis))),
+                        if (hasFile)
+                           IconButton(
+                             icon: const Icon(Icons.close, color: AppColors.error, size: 20),
+                             onPressed: () {
+                               setStateFile(() { _selectedFiles.remove(key); });
+                             },
+                           )
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            );
+          }
+        )
       );
     } else {
       // String simple o Número
