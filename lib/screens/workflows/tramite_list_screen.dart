@@ -131,6 +131,13 @@ class _TramiteListScreenState extends State<TramiteListScreen> {
                 );
               },
             ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => context.push('/chat-enrutamiento'),
+        backgroundColor: AppColors.primary,
+        tooltip: 'Asistente de Trámites',
+        child: const Icon(Icons.smart_toy, color: Colors.white),
+      ),
     );
   }
 }
+

@@ -15,7 +15,7 @@ class AuthService {
     final response = await ApiService.post('/auth/mobile/login', {
       'email': email,
       'password': password,
-      if (fcmToken != null) 'fcmToken': fcmToken,
+      'fcmToken': ?fcmToken,
     });
 
     if (response.statusCode == 200) {

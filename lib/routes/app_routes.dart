@@ -12,11 +12,11 @@ import '../screens/workflows/active_tramites_screen.dart';
 import '../screens/workflows/tramite_detail_screen.dart';
 import '../screens/workflows/payment_screen.dart';
 import '../screens/workflows/form_screen.dart';
+import '../screens/chat/chat_enrutamiento_screen.dart';
 import '../models/tramite_model.dart';
 import '../widgets/main_scaffold.dart';
 import '../services/auth_service.dart';
 import '../models/plantilla_workflow.dart';
-import 'package:flutter/material.dart';
 
 /// Configuración de rutas de la aplicación usando GoRouter
 /// Patrón: Declarative Navigation - Centraliza toda la navegación
@@ -106,6 +106,10 @@ class AppRoutes {
           final tramite = state.extra as Tramite;
           return TramiteDetailScreen(tramite: tramite);
         },
+      ),
+      GoRoute(
+        path: '/chat-enrutamiento',
+        builder: (context, state) => const ChatEnrutamientoScreen(),
       ),
       // ShellRoute: Envuelve las rutas con el BottomNavigationBar
       ShellRoute(
