@@ -13,7 +13,7 @@ class ApiService {
     final useProduction = dotenv.env['USE_PRODUCTION_API'] == 'true';
     if (useProduction) {
       return dotenv.env['API_URL_PROD'] ??
-          'https://api-backend-5axms.azurewebsites.net/api';
+          'https://workflow-backend-rekte.azurewebsites.net/api';
     } else {
       return dotenv.env['API_URL_LOCAL'] ?? 'http://localhost:8080/api';
     }
