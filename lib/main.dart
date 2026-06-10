@@ -6,6 +6,9 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'config/app_theme.dart';
 import 'routes/app_routes.dart';
 import 'services/push_notification_service.dart';
+import 'config/database_helper.dart';
+import 'services/network_status_service.dart';
+import 'services/offline_queue_service.dart';
 
 /// Punto de entrada de la aplicación
 /// Patrón: Single Root App - Configuración centralizada
@@ -13,6 +16,11 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
   await dotenv.load(fileName: ".env");
+
+  // Inicializar base de datos local y servicios offline
+  await DatabaseHelper.instance.database;
+  NetworkStatusService(); // Inicializa listener de conectividad
+  OfflineQueueService(); // Inicializa procesador de colas offline
 
   try {
     await Firebase.initializeApp(
@@ -33,7 +41,7 @@ void main() async {
 /// Widget raíz de la aplicación
 /// Configura temas, rutas y otros servicios globales
 class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key: key);
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -47,6 +55,43 @@ class MyApp extends StatelessWidget {
 
       // Rutas con GoRouter
       routerConfig: AppRoutes.router,
+
+      // Global Builder para inyectar el Banner Offline
+      builder: (context, child) {
+        return Material(
+          child: Stack(
+            children: [
+              if (child != null) child,
+              Positioned(
+                top: MediaQuery.of(context).padding.top,
+                left: 0,
+                right: 0,
+                child: StreamBuilder(
+                  stream: NetworkStatusService().onConnectivityChanged,
+                  builder: (context, snapshot) {
+                    if (!NetworkStatusService().isOnline) {
+                      return Container(
+                        color: Colors.redAccent.withOpacity(0.9),
+                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        child: const Text(
+                          'Modo Sin Conexión',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      );
+                    }
+                    return const SizedBox.shrink();
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
 
       // Localizaciones
       supportedLocales: const [Locale('es', ''), Locale('en', '')],

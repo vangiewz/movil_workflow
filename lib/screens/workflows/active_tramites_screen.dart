@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
 import '../../constants/app_colors.dart';
 import '../../models/tramite_model.dart';
 import '../../services/workflow_service.dart';
+import '../../services/offline_queue_service.dart';
+import '../../widgets/tramite_status_filter.dart';
 import 'package:go_router/go_router.dart';
 
 class ActiveTramitesScreen extends StatefulWidget {
@@ -14,11 +17,24 @@ class ActiveTramitesScreen extends StatefulWidget {
 class _ActiveTramitesScreenState extends State<ActiveTramitesScreen> {
   List<Tramite> _tramites = [];
   bool _isLoading = true;
+  String _selectedStatus = 'ALL';
+  StreamSubscription? _queueSub;
 
   @override
   void initState() {
     super.initState();
     _loadTramites();
+    
+    // Escuchar cuando la cola termine de sincronizarse para refrescar
+    _queueSub = OfflineQueueService().onQueueProcessed.listen((_) {
+      if (mounted) _loadTramites();
+    });
+  }
+
+  @override
+  void dispose() {
+    _queueSub?.cancel();
+    super.dispose();
   }
 
   Future<void> _loadTramites() async {
@@ -33,88 +49,178 @@ class _ActiveTramitesScreenState extends State<ActiveTramitesScreen> {
     } catch (e) {
       if (mounted) {
         setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString()), backgroundColor: AppColors.error));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.toString()),
+            backgroundColor: AppColors.error,
+          ),
+        );
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final filtered = _selectedStatus == 'ALL'
+        ? _tramites
+        : _tramites.where((t) => t.estadoGlobal == _selectedStatus).toList();
+
     return Scaffold(
       appBar: AppBar(title: const Text('Mis Trámites')),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _tramites.isEmpty
-              ? const Center(child: Text('No tienes trámites en curso o finalizados.'))
-              : ListView.builder(
-                  padding: const EdgeInsets.all(24.0),
-                  itemCount: _tramites.length,
-                  itemBuilder: (context, index) {
-                    final t = _tramites[index];
-                    final isDone = t.estadoGlobal == 'FINALIZADO';
-                    final isEsperandoPago = t.estadoGlobal == 'ESPERANDO_PAGO';
-                    final colorStatus = isDone ? Colors.green : (isEsperandoPago ? Colors.orange : AppColors.primary);
-
-                    return GestureDetector(
-                      onTap: () {
-                         if (isEsperandoPago) {
-                           context.push('/payment', extra: t);
-                         } else {
-                           context.push('/tramites/detail', extra: t);
-                         }
-                      },
-                      child: Container(
-                        margin: const EdgeInsets.only(bottom: 16),
-                        padding: const EdgeInsets.all(20),
-                        decoration: BoxDecoration(
-                          color: AppColors.surfaceVariant,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: colorStatus.withOpacity(0.5)),
-                          boxShadow: !isDone ? [BoxShadow(color: AppColors.accentGlow, blurRadius: 6)] : [],
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text('ID: ${t.id?.substring(0, 8)}...', style: const TextStyle(color: Colors.grey, fontSize: 12)),
-                                Text(t.estadoGlobal, style: TextStyle(color: colorStatus, fontWeight: FontWeight.bold, fontSize: 13)),
-                              ],
-                            ),
-                            const SizedBox(height: 12),
-                            Text(t.nombrePlantilla, style: const TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.bold)),
-                            const SizedBox(height: 8),
-                            if (!isDone && !isEsperandoPago) 
-                               Row(
-                                 children: [
-                                    const Icon(Icons.pending_actions, size: 16, color: AppColors.secondary),
-                                    const SizedBox(width: 8),
-                                    Expanded(child: Text('Trámite en curso. Toca para ver detalles.', style: const TextStyle(color: AppColors.textSecondary))),
-                                 ],
-                               ),
-                            if (isEsperandoPago)
-                               Row(
-                                 children: [
-                                    const Icon(Icons.payment, size: 16, color: Colors.orange),
-                                    const SizedBox(width: 8),
-                                    Expanded(child: Text('Pendiente de pago. Toca para abrir pasarela.', style: const TextStyle(color: Colors.orange))),
-                                 ],
-                               ),
-                            if (isDone)
-                               const Row(
-                                 children: [
-                                    Icon(Icons.check_circle, size: 16, color: Colors.green),
-                                    SizedBox(width: 8),
-                                    Text('Completado orgánicamente.', style: TextStyle(color: Colors.green)),
-                                 ],
-                               )
-                          ],
-                        ),
-                      ),
-                    );
-                  },
+          ? const Center(
+              child: Text('No tienes trámites en curso o finalizados.'),
+            )
+          : Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                  child: TramiteStatusFilter(
+                    selected: _selectedStatus,
+                    onChanged: (s) {
+                      setState(() => _selectedStatus = s);
+                    },
+                  ),
                 ),
+                Expanded(
+                  child: ListView.builder(
+                    padding: const EdgeInsets.all(24.0),
+                    itemCount: filtered.length,
+                    itemBuilder: (context, index) {
+                      final t = filtered[index];
+                      final isDone = t.estadoGlobal == 'FINALIZADO';
+                      final isEsperandoPago =
+                          t.estadoGlobal == 'ESPERANDO_PAGO';
+                      final colorStatus = isDone
+                          ? Colors.green
+                          : (isEsperandoPago
+                                ? Colors.orange
+                                : AppColors.primary);
+
+                      return GestureDetector(
+                        onTap: () {
+                          if (isEsperandoPago) {
+                            context.push('/payment', extra: t);
+                          } else {
+                            context.push('/tramites/detail', extra: t);
+                          }
+                        },
+                        child: Container(
+                          margin: const EdgeInsets.only(bottom: 16),
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            color: AppColors.surfaceVariant,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: colorStatus.withOpacity(0.5),
+                            ),
+                            boxShadow: !isDone
+                                ? [
+                                    BoxShadow(
+                                      color: AppColors.accentGlow,
+                                      blurRadius: 6,
+                                    ),
+                                  ]
+                                : [],
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    'ID: ${t.id.substring(0, 8)}...',
+                                    style: const TextStyle(
+                                      color: Colors.grey,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                  Text(
+                                    t.estadoGlobal,
+                                    style: TextStyle(
+                                      color: colorStatus,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+                              Text(
+                                t.nombrePlantilla,
+                                style: const TextStyle(
+                                  color: AppColors.textPrimary,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              if (!isDone && !isEsperandoPago)
+                                Row(
+                                  children: [
+                                    const Icon(
+                                      Icons.pending_actions,
+                                      size: 16,
+                                      color: AppColors.secondary,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        'Trámite en curso. Toca para ver detalles.',
+                                        style: const TextStyle(
+                                          color: AppColors.textSecondary,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              if (isEsperandoPago)
+                                Row(
+                                  children: [
+                                    const Icon(
+                                      Icons.payment,
+                                      size: 16,
+                                      color: Colors.orange,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        'Pendiente de pago. Toca para abrir pasarela.',
+                                        style: const TextStyle(
+                                          color: Colors.orange,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              if (isDone)
+                                const Row(
+                                  children: [
+                                    Icon(
+                                      Icons.check_circle,
+                                      size: 16,
+                                      color: Colors.green,
+                                    ),
+                                    SizedBox(width: 8),
+                                    Text(
+                                      'Completado orgánicamente.',
+                                      style: TextStyle(color: Colors.green),
+                                    ),
+                                  ],
+                                ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
     );
   }
 }

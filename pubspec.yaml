@@ -46,6 +46,13 @@ dependencies:
   file_picker: ^11.0.2
   permission_handler: ^12.0.1
   flutter_local_notifications: ^21.0.0
+  dio: ^5.9.2
+  path_provider: ^2.1.5
+  open_filex: ^4.7.0
+  speech_to_text: ^7.4.0
+  connectivity_plus: ^6.0.3
+  sqflite: ^2.3.0
+  path: ^1.9.0
 
 dev_dependencies:
   flutter_test:

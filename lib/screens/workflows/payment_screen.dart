@@ -13,7 +13,7 @@ class PaymentScreen extends StatefulWidget {
 }
 
 class _PaymentScreenState extends State<PaymentScreen> {
-  bool _isLoading = false;
+  final bool _isLoading = false;
 
   Future<void> _abrirPasarela() async {
     if (widget.tramite.invoiceUrl == null) {

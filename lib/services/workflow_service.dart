@@ -43,8 +43,21 @@ class WorkflowService {
         ? await ApiService.postMultipart('/tramites', requestBody, files)
         : await ApiService.post('/tramites', requestBody);
 
-    if (response.statusCode == 201 || response.statusCode == 200) {
-      return Tramite.fromJson(jsonDecode(response.body));
+    if (response.statusCode >= 200 && response.statusCode <= 202) {
+      final decoded = jsonDecode(response.body);
+      if (decoded['offline'] == true) {
+        // Dummy Tramite para no crashear la UI cuando está offline
+        return Tramite.fromJson({
+          'id': 'offline_sync',
+          'plantillaId': plantillaId,
+          'clienteId': clienteId,
+          'estado': 'EN_COLA_OFFLINE',
+          'fechaCreacion': DateTime.now().toIso8601String(),
+          'fechaActualizacion': DateTime.now().toIso8601String(),
+          'datos': datosFormulario,
+        });
+      }
+      return Tramite.fromJson(decoded);
     } else {
       throw Exception('Error al iniciar el trámite: ${response.body}');
     }
@@ -67,7 +80,17 @@ class WorkflowService {
     if (response.statusCode == 200) {
       return PlantillaWorkflow.fromJson(jsonDecode(response.body));
     } else {
-      throw Exception('Error al cargar detalle del Workflow');
+      throw Exception('Error al cargar detalle del Workflow. Status: ${response.statusCode}, Body: ${response.body}');
+    }
+  }
+
+  // Fetch a single Tramite by its ID
+  static Future<Tramite> getTramiteById(String id) async {
+    final response = await ApiService.get('/tramites/$id');
+    if (response.statusCode == 200) {
+      return Tramite.fromJson(jsonDecode(response.body));
+    } else {
+      throw Exception('Error al cargar detalle del trámite. Status: ${response.statusCode}, Body: ${response.body}');
     }
   }
 
@@ -86,7 +109,9 @@ class WorkflowService {
         ? await ApiService.postMultipart('/tramites/$tramiteId/responder', body, files)
         : await ApiService.post('/tramites/$tramiteId/responder', body);
 
-    if (response.statusCode != 200 && response.statusCode != 201) {
+    if (response.statusCode >= 200 && response.statusCode <= 202) {
+      return; // Éxito o encolado offline
+    } else {
       throw Exception('Error al enviar respuesta: ${response.body}');
     }
   }
@@ -100,4 +125,44 @@ class WorkflowService {
       throw Exception('Error al obtener resumen del trámite');
     }
   }
+
+  /// Asistente IA para autocompletar formularios
+  static Future<Map<String, dynamic>> asistirFormulario(String tramiteId, String pasoId, String modo, String mensaje) async {
+    final body = {
+      "pasoId": pasoId,
+      "modo": modo,
+      "mensaje": mensaje
+    };
+    final response = await ApiService.post('/tramites/$tramiteId/asistir-formulario', body);
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return jsonDecode(response.body) as Map<String, dynamic>;
+    } else {
+      throw Exception('Error al obtener sugerencias de IA: ${response.body}');
+    }
+  }
+
+  /// Asistente IA para el formulario inicial de creación de trámite
+  static Future<Map<String, dynamic>> asistirFormularioInicial(String plantillaId, String modo, String mensaje) async {
+    final body = {
+      "modo": modo,
+      "mensaje": mensaje
+    };
+    final response = await ApiService.post('/workflows/$plantillaId/asistir-formulario', body);
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return jsonDecode(response.body) as Map<String, dynamic>;
+    } else {
+      throw Exception('Error al obtener sugerencias de IA: ${response.body}');
+    }
+  }
+
+  /// Chatbot de enrutamiento
+  static Future<Map<String, dynamic>> enrutarChatbot(String mensaje) async {
+    final response = await ApiService.post('/chat/enrutar', {'mensajeUsuario': mensaje});
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return jsonDecode(response.body) as Map<String, dynamic>;
+    } else {
+      throw Exception('Error en el chatbot: ${response.body}');
+    }
+  }
 }
+
